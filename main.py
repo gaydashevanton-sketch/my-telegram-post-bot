@@ -1,9 +1,9 @@
 import asyncio
 import logging
 import os
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types  # добавили types
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiohttp import web  # добавляем импорт
+from aiohttp import web
 from config import BOT_TOKEN
 from handlers.start import router as start_router
 from handlers.channels import router as channels_router
@@ -17,7 +17,6 @@ async def ping_handler(request):
 
 # Функция запуска веб-сервера
 async def run_web_server():
-    # Render передаёт порт в переменной окружения PORT
     port = int(os.getenv("PORT", "10000"))
     app = web.Application()
     app.router.add_get("/ping", ping_handler)
@@ -26,8 +25,7 @@ async def run_web_server():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
     logging.info(f"Web server for pinging started on port {port}")
-    # Бесконечно держим сервер включённым
-    await asyncio.Event().wait()
+    await asyncio.Event().wait()  # держим сервер включённым
 
 async def main():
     # Запускаем веб-сервер в фоне
@@ -41,8 +39,15 @@ async def main():
     dp.include_router(channels_router)
     dp.include_router(post_router)
 
+    # ========== ВРЕМЕННЫЙ ОТЛАДОЧНЫЙ ХЕНДЛЕР ==========
+    @dp.message()
+    async def debug_handler(message: types.Message):
+        print(f"🔥 Получено сообщение из чата: {message.chat.id} (тип: {type(message.chat.id)})")
+        print(f"📢 Название чата: {message.chat.title}")
+        # Не отвечаем, просто логируем
+    # =================================================
+
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
